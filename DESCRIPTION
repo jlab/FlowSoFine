@@ -1,0 +1,18 @@
+Package: FlowSoFine
+Type: Package
+Title: N-Dimensional Binning Of Flow Cytometric Data
+Version: 0.1.0
+Author: Who wrote it
+Maintainer: Jonas Kupschus <Jonas.Kupschus@IUF-Duesseldorf.de>
+Description: N-dimensional binning of flow cytometric data with correction for spatial dependencies.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
+Imports:
+  plotly,
+  ggplot2,
+  dplyr,
+  flowCore,
+  gridExtra,
+  data.table
