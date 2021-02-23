@@ -1,5 +1,8 @@
 ---
-output: github_document
+output: 
+  github_document:
+    toc: true
+    toc_depth: 4
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -18,35 +21,54 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of FlowSoFine is to ...
+The goal of FlowSoFine is to quickly and easily generate data structures that make it easy to get statistical output starting from raw fcs-files and a metadata table. The grid approach is especially useful if there aren't any populations clearly visible in the files. This works with a flexible amount of channels and correction for spatial dependencies.
+
 
 ## Installation
 
+You can install the development version of FlowSoFine from GitHub with:
 
 ``` r
+library(devtools)
+install_github("JonasKup/FlowSoFine")
 ```
 
-## Example
+## Quickstart
+
 
 This is a basic example which shows you how to solve a common problem:
 
-```{r example}
+```{r example, warning = FALSE}
 library(FlowSoFine)
-## basic example code
+setwd("C:/Users/jonas/Documents/IUF/FACSDATA/testExp/fcs")
+
+
+#for reading fcs files. Installation via Bioconductor.
+library(flowCore)
+
+
+
+#for community ecology statistics
+library(vegan)
+
+
+
+fcs <- read.flowSet(pattern = ".fcs")
+metadata <- read.csv2("metadata.csv")
+
+#Create the CoreTemplate
+ct <- CoreTemplate(flowset = fcs, channels = c("FSC PAR", "Hoechst Red"), resolution = 50)
+
+#plot the first sample of the CoreTemplate
+plot(template = ct, sample = 1)
+
+
+#Create a distance matrix with adjustments for spatial dependencies
+distM <- weightedBray(ct)
+
+#You can use the adonis function from the vegan package to get statistical output
+adonis2(distM ~ treatment + age, data = metadata)
+
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
-
-```{r cars}
-summary(cars)
-```
-
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date.
-
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub!
+## Multidimensional analysis

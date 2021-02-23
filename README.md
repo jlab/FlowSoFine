@@ -1,4 +1,9 @@
 
+  - [FlowSoFine](#flowsofine)
+      - [Installation](#installation)
+      - [Quickstart](#quickstart)
+      - [Multidimensional analysis](#multidimensional-analysis)
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # FlowSoFine
@@ -7,54 +12,75 @@
 
 <!-- badges: end -->
 
-The goal of FlowSoFine is to …
+The goal of FlowSoFine is to quickly and easily generate data structures
+that make it easy to get statistical output starting from raw fcs-files
+and a metadata table. The grid approach is especially useful if there
+aren’t any populations clearly visible in the files. This works with a
+flexible amount of channels and correction for spatial dependencies.
 
 ## Installation
 
+You can install the development version of FlowSoFine from GitHub with:
+
 ``` r
+library(devtools)
+install_github("JonasKup/FlowSoFine")
 ```
 
-## Example
+## Quickstart
 
 This is a basic example which shows you how to solve a common problem:
 
 ``` r
 library(FlowSoFine)
-#> Warning: replacing previous import 'data.table::last' by 'dplyr::last' when
-#> loading 'FlowSoFine'
-#> Warning: replacing previous import 'data.table::first' by 'dplyr::first' when
-#> loading 'FlowSoFine'
-#> Warning: replacing previous import 'data.table::between' by 'dplyr::between'
-#> when loading 'FlowSoFine'
-#> Warning: replacing previous import 'dplyr::filter' by 'flowCore::filter' when
-#> loading 'FlowSoFine'
-#> Warning: replacing previous import 'ggplot2::last_plot' by 'plotly::last_plot'
-#> when loading 'FlowSoFine'
-#> Warning: replacing previous import 'flowCore::filter' by 'plotly::filter' when
-#> loading 'FlowSoFine'
-## basic example code
+setwd("C:/Users/jonas/Documents/IUF/FACSDATA/testExp/fcs")
+
+
+#for reading fcs files. Installation via Bioconductor.
+library(flowCore)
+
+
+
+#for community ecology statistics
+library(vegan)
+#> Loading required package: permute
+#> Loading required package: lattice
+#> This is vegan 2.5-6
+
+
+
+fcs <- read.flowSet(pattern = ".fcs")
+metadata <- read.csv2("metadata.csv")
+
+#Create the CoreTemplate
+ct <- CoreTemplate(flowset = fcs, channels = c("FSC PAR", "Hoechst Red"), resolution = 50)
+#>  Processing sample 1 / 14 Processing sample 2 / 14 Processing sample 3 / 14 Processing sample 4 / 14 Processing sample 5 / 14 Processing sample 6 / 14 Processing sample 7 / 14 Processing sample 8 / 14 Processing sample 9 / 14 Processing sample 10 / 14 Processing sample 11 / 14 Processing sample 12 / 14 Processing sample 13 / 14 Processing sample 14 / 14
+
+#plot the first sample of the CoreTemplate
+plot(template = ct, sample = 1)
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
+<img src="man/figures/README-example-1.png" width="100%" />
 
 ``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+
+
+#Create a distance matrix with adjustments for spatial dependencies
+distM <- weightedBray(ct)
+
+#You can use the adonis function from the vegan package to get statistical output
+adonis2(distM ~ treatment + age, data = metadata)
+#> Permutation test for adonis under reduced model
+#> Terms added sequentially (first to last)
+#> Permutation: free
+#> Number of permutations: 999
+#> 
+#> adonis2(formula = distM ~ treatment + age, data = metadata)
+#>           Df SumOfSqs      R2      F Pr(>F)
+#> treatment  1  0.09892 0.07912 0.8633  0.600
+#> age       10  0.92210 0.73758 0.8048  0.821
+#> Residual   2  0.22915 0.18330              
+#> Total     13  1.25016 1.00000
 ```
 
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date.
-
-You can also embed plots, for example:
-
-<img src="man/figures/README-pressure-1.png" width="100%" />
-
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub\!
+## Multidimensional analysis
