@@ -7,7 +7,7 @@
 frequencies(template)
 }
 \arguments{
-\item{template}{A \code{\link{CoreTemplate}}}
+\item{template}{A \code{\link{FSFTemplate}}}
 }
 \value{
 a data.frame

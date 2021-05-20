@@ -2,12 +2,12 @@
 % Please edit documentation in R/WeightedBray.R
 \name{weightMatrix}
 \alias{weightMatrix}
-\title{Create a Matrix containing Weights for each Combination of Hexagons}
+\title{Create a Matrix containing Weights for each Combination of Bins}
 \usage{
 weightMatrix(template, method = "exp", gamma = 8, val = c(0.5, 0.25, 0.25))
 }
 \arguments{
-\item{template}{A \code{\link{CoreTemplate}}}
+\item{template}{A \code{\link{FSFTemplate}}}
 
 \item{method}{"exp" for exponential, "disc" or anything else for discrete approach}
 
@@ -19,5 +19,5 @@ weightMatrix(template, method = "exp", gamma = 8, val = c(0.5, 0.25, 0.25))
 A matrix containing weights for each combination of hexagons. To be used in \code{\link{weightedBray}}.
 }
 \description{
-Create a Matrix containing Weights for each Combination of Hexagons
+Create a Matrix containing Weights for each Combination of Bins
 }

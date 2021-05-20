@@ -1,6 +1,6 @@
-#' Create a Matrix containing Weights for each Combination of Hexagons
+#' Create a Matrix containing Weights for each Combination of Bins
 #'
-#' @param template A \code{\link{CoreTemplate}}
+#' @param template A \code{\link{FSFTemplate}}
 #' @param method "exp" for exponential, "disc" or anything else for discrete approach
 #' @param gamma A Number controlling the speed of the decrease. Only applies when method = "exp".
 #' @param val A vector containing weights for each ranked distance between hexagons. Only applies when method = "disc".
@@ -41,9 +41,9 @@ weightMatrix <- function(template, method = "exp", gamma = 8, val = c(.5,.25,.25
 
 }
 
-#' Compute Weighted Bray Distance between Samples of a CoreTemplate
+#' Compute Weighted Bray Distance between Samples of a FSFTemplate
 #'
-#' @param template A \code{\link{CoreTemplate}} Object
+#' @param template A \code{\link{FSFTemplate}} Object
 #' @param gamma A positive number specifying the drop off of the weight matrix when w = NA
 #' @param w Optionally you may provide your own weight matrix created with \code{\link{weightMatrix}}
 #'
@@ -51,13 +51,13 @@ weightMatrix <- function(template, method = "exp", gamma = 8, val = c(.5,.25,.25
 #' @export
 #'
 #' @examples
-weightedBray <- function(template, gamma = 8, w = NA) {
+weightedBray <- function(template, gamma = 8, w = NULL) {
   #computes weighted bray distance between samples
   #if w is undefined then w = exp(-1*gamma*euclDist)
 
   h <- t(frequencies(template))
 
-  if(is.na(w)) {
+  if(is.null(w)) {
     w <- weightMatrix(template, gamma = gamma)
   }
 

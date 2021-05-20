@@ -1,6 +1,6 @@
-#' Get t-scores according to Welch's t-statistic for a CoreTemplate and a Metadata Group
+#' Get t-scores according to Welch's t-statistic for a FSFTemplate and a Metadata Group
 #'
-#' @param template A CoreTemplate Object
+#' @param template A FSFTemplate Object
 #' @param group A vector of metadata
 #'
 #' @return A DataFrame of t-scores
@@ -12,11 +12,13 @@ tscores <- function(template, group) {
   relative <- t(frequencies(template))
   treatment <- as.factor(group)
 
+
   gr <- expand.grid(unique(treatment), unique(treatment))
   gr <- gr[!duplicated(t(apply(gr, 1, sort))), ]
   gr <- gr[gr[,1] != gr[,2],]
 
-  tscores <- apply(gr, 1, function(x) {
+
+  ts <- apply(gr, 1, function(x) {
     s1mean <- apply(relative[,which(treatment == x[1])],1,mean)
     s2mean <- apply(relative[,which(treatment == x[2])],1,mean)
 
@@ -31,7 +33,8 @@ tscores <- function(template, group) {
 
   })
 
-  colnames(tscores) <- paste(gr[,1],gr[,2], sep = "-")
-  tscores
+
+  colnames(ts) <- paste(gr[,1],gr[,2], sep = "-")
+  ts
 
 }

@@ -2,12 +2,12 @@
 % Please edit documentation in R/WeightedBray.R
 \name{weightedBray}
 \alias{weightedBray}
-\title{Compute Weighted Bray Distance between Samples of a CoreTemplate}
+\title{Compute Weighted Bray Distance between Samples of a FSFTemplate}
 \usage{
-weightedBray(template, gamma = 8, w = NA)
+weightedBray(template, gamma = 8, w = NULL)
 }
 \arguments{
-\item{template}{A \code{\link{CoreTemplate}} Object}
+\item{template}{A \code{\link{FSFTemplate}} Object}
 
 \item{gamma}{A positive number specifying the drop off of the weight matrix when w = NA}
 
@@ -17,5 +17,5 @@ weightedBray(template, gamma = 8, w = NA)
 A distance matrix
 }
 \description{
-Compute Weighted Bray Distance between Samples of a CoreTemplate
+Compute Weighted Bray Distance between Samples of a FSFTemplate
 }

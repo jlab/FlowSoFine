@@ -2,12 +2,12 @@
 % Please edit documentation in R/Tscores.R
 \name{tscores}
 \alias{tscores}
-\title{Get t-scores according to Welch's t-statistic for a CoreTemplate and a Metadata Group}
+\title{Get t-scores according to Welch's t-statistic for a FSFTemplate and a Metadata Group}
 \usage{
 tscores(template, group)
 }
 \arguments{
-\item{template}{A CoreTemplate Object}
+\item{template}{A FSFTemplate Object}
 
 \item{group}{A vector of metadata}
 }
@@ -15,5 +15,5 @@ tscores(template, group)
 A DataFrame of t-scores
 }
 \description{
-Get t-scores according to Welch's t-statistic for a CoreTemplate and a Metadata Group
+Get t-scores according to Welch's t-statistic for a FSFTemplate and a Metadata Group
 }
