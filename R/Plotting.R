@@ -1,81 +1,208 @@
-#' Plot A 1- to 3-Dimensional CoreTemplate
+#' Plot A 1- to 3-Dimensional FSFTemplate
 #'
-#' @param template The \code{\link{CoreTemplate}} to plot
+#' @param template The \code{\link{FSFTemplate}} to plot
 #' @param sample The sample to plot
+#' @param limits Limits of the fill aesthetic
+#' @param ... Additional arguments passed to ggplot (1D) or geom_raster (2D)
 #'
-#' @return Depending on the number of dimensions nothing, a ggplot2 object or a plotly object
+#' @return A ggplot2 object
 #' @export
-#' @method plot CoreTemplate
+#' @method plot FSFTemplate
 #'
-#' @import plotly ggplot2
+#' @import ggplot2
 #'
 #' @examples
-plot.CoreTemplate <- function(template, sample) {
+plot.FSFTemplate <- function(template, sample = NA, z = NULL, limits = NULL, ...) {
+
   points <- as.data.frame(template@coords)
-  counts <- template@counts[,sample]
+
+  if(!is.na(sample)) {
+    counts <- template@counts[,sample]
+    sName <- colnames(template@counts[,sample, drop = F])
+  }
   channels <- colnames(points)
-  #channels <- channels
 
   colours <- c("blue4", "cyan3", "darkgreen", "mediumseagreen",  "chartreuse1", "goldenrod" , "gold", "darkorange", "firebrick1", "firebrick4")
 
   if(length(channels) == 1) {
 
-    plot(y = log10(counts), x = points[,1], xlab = channels, type = "b")
+    if(is.na(sample)) {
+
+      ggplot(points, aes(x = points[,1], ...)) +
+        geom_bar(stat = "identity") +
+        geom_point() +
+        geom_line() +
+        theme_minimal() +
+        labs(x = channels)
+
+    } else {
+
+      ggplot(mapping = aes(y = log10(counts), x = points[,1], color = log10(counts))) +
+        geom_point() +
+        geom_line() +
+        scale_color_gradientn(colours = colours, limits = limits) +
+        theme_minimal() +
+        labs(x = channels, title = sName)
+
+    }
 
   } else if(length(channels) == 2) {
 
-    ggplot(points, aes(x = points[,1], y = points[,2], fill = log10(counts))) +
-      geom_raster() +
-      scale_fill_gradientn(colours = colours) +
-      labs(x = channels[1], y = channels[2])
+    if(is.na(sample)) {
+
+      ggplot(points, aes(x = points[,1], y = points[,2])) +
+        geom_raster(...) +
+        theme_minimal() +
+        labs(x = channels[1], y = channels[2])
+
+    } else {
+
+      ggplot(points, aes(x = points[,1], y = points[,2], fill = log10(counts))) +
+        geom_raster(...) +
+        scale_fill_gradientn(colours = colours, limits = limits) +
+        labs(x = channels[1], y = channels[2], fill = "log10(Events)", title = sName) +
+        theme_minimal()
+
+    }
+
+
 
   } else if(length(channels) == 3) {
 
-    colnames(points) <- c("V1", "V2", "V3")
-    counts <- log10(counts)
+    colormap(template, sample, z, limits = limits)
 
-    points <- points[-which(counts<0),]
-    counts <- counts[-which(counts < 0)]
-
-    fig <- plot_ly(points, x = ~V1, y = ~V2, z = ~V3,
-                   type = "scatter3d",
-                   mode = "markers",
-                   color = counts,
-                   colors = colours)#1/length(counts)*4000)
-    layout(fig,
-           scene = list(
-             xaxis = list(title = channels[1]),
-             yaxis = list(title = channels[2]),
-             zaxis = list(title = channels[3])
-           )
-    )
+    # colnames(points) <- c("V1", "V2", "V3")
+    # counts <- log10(counts)
+    #
+    # points <- points[-which(counts<0),]
+    # counts <- counts[-which(counts < 0)]
+    #
+    # fig <- plot_ly(points, x = ~V1, y = ~V2, z = ~V3,
+    #                type = "scatter3d",
+    #                mode = "markers",
+    #                color = counts,
+    #                colors = colours,
+    #                ...)#1/length(counts)*4000)
+    # layout(fig,
+    #        scene = list(
+    #          xaxis = list(title = channels[1]),
+    #          yaxis = list(title = channels[2]),
+    #          zaxis = list(title = channels[3])
+    #        )
+    # )
   }
 }
 
-
-#' Plot Every 1- Or 2-Dimensional Combination Of Axes Of A NDTemplate
+#' Plot a pseudo 3-dimensional Plot with the mean z Channel Coordinate as fill Color
 #'
-#' @param template The NDTemplate to plot
+#' @param template A 3-dimensional FSFTemplate
 #' @param sample The sample to plot
-#' @param dimen The number of axes to plot (1 or 2)
+#' @param z The channel that should be used as fill color
 #'
-#' @return
+#' @return A ggplot2 plot
 #' @export
-#' @method plot NDTemplate
-#' @importFrom gridExtra grid.arrange
+#'
+#' @import ggplot2 data.table
+#'
 #'
 #' @examples
-plot.NDTemplate <- function(template, sample, dimen = 1) {
-  dimL <- template@templates[[dimen]]
-  l <- ceiling(sqrt(length(dimL)))
+colormap <- function(template, sample, z = NULL, limits = NULL) {
+  channels <- colnames(template@coords)
 
-  if(dimen == 1) {
-    par(mfrow = c(l, l))
-    for (i in dimL) plot(i, sample)
-    par(mfrow=c(1, 1))
-  } else if(dimen == 2) {
-    glist <- lapply(dimL, plot, sample)
-    grid.arrange(grobs = glist, nrow = l)
+  if(length(channels) != 3) stop("Template has to contain exactly 3 channels")
+
+  if(is.null(z)) z <- channels[3]
+
+  channels <- channels[-which(channels == z)]
+
+
+  temp2d <- shrink(template, channels)
+
+
+  subPoints <- template@coords[,channels, drop = F]
+
+  zChannel <- template@coords[,z]
+
+  zcounts <- template@counts
+  zcounts <- zcounts * zChannel
+
+  zPoints <- cbind(subPoints, zcounts)
+  setDT(zPoints)
+
+
+  subPoints <- cbind(subPoints, template@counts)
+  setDT(subPoints)
+
+
+
+  #get sum of events
+  dSized <- subPoints[,lapply(.SD, sum), by = channels]
+
+  #get sum of events multiplied by z channel coordinates
+  zSized <- zPoints[,lapply(.SD, sum), by = channels]
+
+  #get mean coordinates of z channel
+  zMean <- as.data.frame(zSized[,3:ncol(zSized)]/dSized[,3:ncol(dSized)])
+
+  colours <- c("blue4", "cyan3", "darkgreen", "mediumseagreen",  "chartreuse1", "goldenrod" , "gold", "darkorange", "firebrick1", "firebrick4")
+
+  plot(temp2d, mapping = aes(fill = zMean[,sample])) +
+    scale_fill_gradientn(colours = colours, limits = limits) +
+    labs(title = colnames(zMean)[sample], fill = paste0("mean(",z,")"))
+
+}
+
+
+#' Plot A flowCore flowFrame
+#'
+#' @param flowFrame A \code{\link{flowCore}} flowFrame
+#' @param x x-channel
+#' @param y Y-channel
+#' @param resolution Resolution of the plot
+#' @param transformation Transformation. Default is log10. transformation = NULL for no transformation
+#' @param ... Additional arguments passed to plot.FSFTemplate
+#'
+#' @return A ggplot2 plot
+#' @export
+#' @importFrom flowCore flowSet
+#' @importFrom flowCore identifier
+#'
+#' @examples
+plotFF <- function(flowFrame, x, y, resolution = 50, transformation = log10, ...) {
+  ct <- FSFTemplate(flowSet(flowFrame),
+                     c(x, y),
+                     resolution = resolution,
+                     transformation = transformation,
+                     verbose = F)
+  plot(ct, 1, ...) + labs(title = identifier(flowFrame))
+}
+
+
+#' Plot t-scores in 1 or 2 Dimensions
+#'
+#' @param template A FSFTemplate Object
+#' @param ts A vector of t-scores
+#' @param limits Limits of the color scale
+#'
+#' @return A ggplot Object
+#' @export
+#' @import ggplot2
+#' @examples
+plotTscores <- function(template, ts, limits = NULL) {
+  channels <- colnames(template@coords)
+
+  if(length(channels) == 2) {
+
+    plot(template, mapping = aes(fill = ts)) +
+      scale_fill_gradient2(low = "blue", high = "red", limits = limits) +
+      labs(title = colnames(ts))
+
+  } else if(length(channels) == 1) {
+
+    plot(template, y = ts, fill = ts)+
+      scale_fill_gradient2(low = "blue", high = "red", limits = limits) +
+      labs(title = colnames(ts), y = "t-scores")
+
   }
 
 }
