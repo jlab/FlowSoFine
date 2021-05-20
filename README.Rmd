@@ -56,8 +56,8 @@ library(vegan)
 fcs <- read.flowSet(pattern = ".fcs")
 metadata <- read.csv2("metadata.csv")
 
-#Create the CoreTemplate
-ct <- CoreTemplate(flowset = fcs, channels = c("FSC PAR", "Hoechst Red"), resolution = 50)
+#Create the FSFTemplate
+ct <- FSFTemplate(flowset = fcs, channels = c("FSC PAR", "Hoechst Red"), resolution = 35)
 
 #plot the first sample of the CoreTemplate
 plot(template = ct, sample = 1)

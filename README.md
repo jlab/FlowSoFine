@@ -1,15 +1,14 @@
 
-  - [FlowSoFine](#flowsofine)
-      - [Installation](#installation)
-      - [Quickstart](#quickstart)
-      - [Multidimensional analysis](#multidimensional-analysis)
+-   [FlowSoFine](#flowsofine)
+    -   [Installation](#installation)
+    -   [Quickstart](#quickstart)
+    -   [Multidimensional analysis](#multidimensional-analysis)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # FlowSoFine
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 The goal of FlowSoFine is to quickly and easily generate data structures
@@ -52,8 +51,8 @@ library(vegan)
 fcs <- read.flowSet(pattern = ".fcs")
 metadata <- read.csv2("metadata.csv")
 
-#Create the CoreTemplate
-ct <- CoreTemplate(flowset = fcs, channels = c("FSC PAR", "Hoechst Red"), resolution = 50)
+#Create the FSFTemplate
+ct <- FSFTemplate(flowset = fcs, channels = c("FSC PAR", "Hoechst Red"), resolution = 35)
 #>  Processing sample 1 / 14 Processing sample 2 / 14 Processing sample 3 / 14 Processing sample 4 / 14 Processing sample 5 / 14 Processing sample 6 / 14 Processing sample 7 / 14 Processing sample 8 / 14 Processing sample 9 / 14 Processing sample 10 / 14 Processing sample 11 / 14 Processing sample 12 / 14 Processing sample 13 / 14 Processing sample 14 / 14
 
 #plot the first sample of the CoreTemplate
@@ -63,7 +62,6 @@ plot(template = ct, sample = 1)
 <img src="man/figures/README-example-1.png" width="100%" />
 
 ``` r
-
 
 #Create a distance matrix with adjustments for spatial dependencies
 distM <- weightedBray(ct)
@@ -77,10 +75,10 @@ adonis2(distM ~ treatment + age, data = metadata)
 #> 
 #> adonis2(formula = distM ~ treatment + age, data = metadata)
 #>           Df SumOfSqs      R2      F Pr(>F)
-#> treatment  1  0.09892 0.07912 0.8633  0.600
-#> age       10  0.92210 0.73758 0.8048  0.821
-#> Residual   2  0.22915 0.18330              
-#> Total     13  1.25016 1.00000
+#> treatment  1  0.09713 0.07966 0.8612  0.641
+#> age       10  0.89666 0.73536 0.7950  0.844
+#> Residual   2  0.22556 0.18499              
+#> Total     13  1.21935 1.00000
 ```
 
 ## Multidimensional analysis
