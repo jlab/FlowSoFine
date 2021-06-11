@@ -9,7 +9,13 @@
 #' @examples
 setClass("FSFTemplate",
          representation(coords = "data.frame",
-                        counts = "data.frame"))
+                        counts = "data.frame",
+                        index = "vector",
+                        nSamples = "integer",
+                        channels = "vector",
+                        nBins = "numeric",
+                        resolution = "numeric",
+                        dimen = "list"))
 
 
 
@@ -42,7 +48,7 @@ FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log1
   nDim <- length(channels)
 
 
-  #asinh instead?
+  if(verbose) cat("Transforming and subsetting flowSet\n")
   logD <- lapply(fl, function(x) as.data.frame(transformation(x@exprs[, channels])))
 
   #filter out -Inf
@@ -51,8 +57,11 @@ FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log1
     x
   })
 
-  #channelAll <- dplyr::bind_rows(logD)
   channelAll <- do.call(rbind, logD)
+
+  if(verbose) cat("Building coordinates for FSFtemplate with",
+                  length(channels),
+                  "dimensions and a resolution of", resolution, "\n")
 
   rangeV <- apply(channelAll, 2, range)
 
@@ -70,6 +79,8 @@ FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log1
 
   full <- list()
   coords <- data.table()
+
+
 
   g <- 1
   for(z in logD) {
@@ -92,24 +103,32 @@ FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log1
     })
 
 
-
     setDT(gated)
     ind2 <- maxBins[gated, which = T]
+
     tab <- data.table(table(ind2))
     tab$ind2 <- as.integer(tab$ind2)
 
+
     binCount <- rep(0, resolution^nDim)
+    #indexCount <- rep(0, resolution^nDim)
 
     binCount[tab$ind2] <- tab$N
+    #indexCount[tab$ind2] <- tab$ind2
 
     gates_0 <- which(binCount == 0)
-    #coords for grids with > 0 entries
-    coords2 <- maxBins[-gates_0]
-    binCount <- binCount[-gates_0]
-    binCount
 
-    #View(coords)
-    #View(coords2)
+
+    #coords for grids with > 0 entries
+    if (length(gates_0) == 0) {
+      coords2 <- maxBins
+      #binCount <- binCount
+    } else {
+      coords2 <- maxBins[-gates_0]
+      binCount <- binCount[-gates_0]
+      #indexCount <- indexCount[-gates_0]
+    }
+
 
     #dynamically remove 0 bins for decreased RAM usage
     if (length(full) == 0) {
@@ -122,20 +141,16 @@ FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log1
       #coords in the new sample without 0 gates (coords2) plus coords in all other samples (coords)
       uc <- funion(coords, coords2)
 
-      #View(uc)
 
       #return indices of new sample's entries in combined coords
-      #j <- uc[coords2, which = T]
       j <- uc[coords2, on = .NATURAL, which = T]
-      #View(j)
       #return indices of the other samples' entries in combined coords
       j1 <- uc[coords, on = .NATURAL, which = T]
-      #j1 <- uc[coords, which = T]
 
       nb <- rep(0, nrow(uc))
       nb[j] <- binCount
 
-      #shift all of the other samples' entries to accomodate the new sample
+      #shift all of the other samples' entries to accommodate the new sample
       full <- lapply(full, function(x) {
         nb <- rep(0, nrow(uc))
         nb[j1] <- x
@@ -148,14 +163,37 @@ FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log1
 
   }
 
+
+
+
+  #sorting rows by channel coordinates
+  setDT(coords)
+  setDT(full)
+  colnames(coords) <- channels
+  sNames <- names(fl)
+  colnames(full) <- sNames
+
+
+
+
+  dt <- cbind(coords, full)
+
+  setorderv(dt, channels)
+
+  index <- maxBins[dt[,..channels], which = T]
+
+
+
   if(verbose) cat("\n")
 
-  coords <- as.data.frame(coords)
-  counts <- as.data.frame(full)
-  colnames(coords) <- channels
-  colnames(counts) <- names(fl)
 
   new("FSFTemplate",
-      coords = coords,
-      counts = counts)
+      coords = as.data.frame(dt[, ..channels]),
+      counts = as.data.frame(dt[, ..sNames]),
+      nSamples = length(fl),
+      channels = channels,
+      nBins = nrow(coords),
+      resolution = resolution,
+      index = index,
+      dimen = dimensions)
 }
