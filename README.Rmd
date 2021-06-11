@@ -54,8 +54,8 @@ fcs <- read.flowSet(pattern = ".fcs")
 sampleNames(fcs) <- paste("sample", sep = "_", 1:length(sampleNames(fcs)))
 ```
 
-```{r example2}
-
+```{r exampl}
+setwd("C:/Users/jonas/Documents/IUF/FACSDATA/testExp/fcs")
 metadata <- read.csv2("metadata.csv")
 
 #Create the FSFTemplate

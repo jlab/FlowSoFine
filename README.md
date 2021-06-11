@@ -46,8 +46,13 @@ setwd("C:/Users/jonas/Documents/IUF/FACSDATA/testExp/fcs")
 
 #for reading fcs files. Installation via Bioconductor. https://www.bioconductor.org/packages/release/bioc/html/flowCore.html
 library(flowCore)
+#> Warning: package 'flowCore' was built under R version 4.0.3
 
 fcs <- read.flowSet(pattern = ".fcs")
+```
+
+``` r
+setwd("C:/Users/jonas/Documents/IUF/FACSDATA/testExp/fcs")
 metadata <- read.csv2("metadata.csv")
 
 #Create the FSFTemplate
@@ -60,7 +65,7 @@ template <- FSFTemplate(flowset = fcs, channels = c("FSC PAR", "Hoechst Red"), r
 plot(template = template, sample = 1)
 ```
 
-<img src="man/figures/README-example-1.png" width="100%" />
+<img src="man/figures/README-exampl-1.png" width="100%" />
 
 ``` r
 
@@ -70,7 +75,9 @@ distM <- weightedBray(template)
 
 #for community ecology statistics
 library(vegan)
+#> Warning: package 'vegan' was built under R version 4.0.3
 #> Loading required package: permute
+#> Warning: package 'permute' was built under R version 4.0.3
 #> Loading required package: lattice
 #> This is vegan 2.5-6
 
@@ -82,11 +89,13 @@ adonis2(distM ~ treatment + age, data = metadata)
 #> Number of permutations: 999
 #> 
 #> adonis2(formula = distM ~ treatment + age, data = metadata)
-#>           Df SumOfSqs      R2      F Pr(>F)
-#> treatment  1  0.09713 0.07966 0.8612  0.609
-#> age       10  0.89666 0.73536 0.7950  0.859
-#> Residual   2  0.22556 0.18499              
-#> Total     13  1.21935 1.00000
+#>           Df SumOfSqs      R2      F Pr(>F)  
+#> treatment  1  0.09198 0.07543 1.2956  0.215  
+#> age       10  0.98540 0.80813 1.3881  0.085 .
+#> Residual   2  0.14198 0.11644                
+#> Total     13  1.21935 1.00000                
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
 ## Plotting
@@ -94,6 +103,8 @@ adonis2(distM ~ treatment + age, data = metadata)
 ``` r
 #plot a flowCore flowFrame with a flexible resolution and transformation function
 plotFF(flowFrame = fcs[[1]], channels = c("FSC PAR", "Hoechst Red"), resolution = 250, transformation = asinh)
+#> Warning: Raster pixels are placed at uneven vertical intervals and will be
+#> shifted. Consider using geom_tile() instead.
 ```
 
 <img src="man/figures/README-Plotting-1.png" width="100%" />
@@ -110,14 +121,14 @@ plot(template, sample = 1)
 #add info to the plot using the ggplot2 library
 library(ggplot2)
 #add tbe total number of events in each bin for sample 1 to the plot
-plot(template, sample = 1) + geom_text(aes(label = template@counts[,1]))
+plot(template, sample = 1) + geom_text(aes(label = template@counts[,1]), size = 2)
 ```
 
 <img src="man/figures/README-Plotting-3.png" width="100%" />
 
 ``` r
 #add the bin number to each bin
-plot(template, sample = 1) + geom_text(aes(label = 1:template@nBins))
+plot(template, sample = 1) + geom_text(aes(label = 1:template@nBins), size = 2)
 ```
 
 <img src="man/figures/README-Plotting-4.png" width="100%" />
