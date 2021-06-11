@@ -8,7 +8,46 @@
 #' @examples
 frequencies <- function(template) {
 
-  f <- t(sapply(template@counts, function(x) x/sum(x)*100 ))
+  t(template@counts)/colSums(template@counts) * 100
+
+}
+
+
+#' Print Info about a FSFTemplate
+#'
+#' @param template A FSFTemplate
+#'
+#' @return
+#' @export
+#' @method print FSFTemplate
+#'
+#' @examples
+print.FSFTemplate <- function(template, samples = 1) {
+
+  cat("FSFTemplate with", template@nBins, "bins,",
+      template@nSamples, "Samples and",
+      length(template@channels), "channels. \n\n")
+
+  nChannels = length(template@channels)
+
+  for (sample in samples) {
+    cat(colnames(template@counts)[sample], "[sample", sample, "/", template@nSamples,"]", "\n")
+    cat("----------------\n")
+    cat("coords", rep("\t", nChannels + 1),"counts \n")
+    cat("------", rep("\t", nChannels + 1), "------ \n")
+    cat(paste0(template@channels,"\t"), "\n")
+
+    for (i in 1:3) {
+      cat(unlist(template@coords[i, ]), "\t", template@counts[i, sample], "\n")
+    }
+
+    cat("//", rep("\t", nChannels + 1), "// \n")
+
+    for (i in 3:1) {
+      cat(unlist(template@coords[template@nBins - i, ]), "\t", template@counts[template@nBins - i, sample], "\n")
+    }
+    cat("\n")
+  }
 
 }
 
@@ -31,11 +70,28 @@ shrink <- function(template, channels) {
   subPoints <- cbind(subPoints, template@counts)
 
   dSized <- subPoints[,lapply(.SD, sum), by = channels]
+
+  setorderv(dSized, channels)
+
   counts <- dSized[,..cnames]
   coords <- dSized[,..channels]
 
-  new("FSFTemplate", coords = as.data.frame(coords),
-      counts = as.data.frame(counts))
+  #for the index
+  maxBins <- expand.grid(template@dimen[which(template@channels %in% channels)])
+  colnames(maxBins) <- channels
+  setDT(maxBins)
+  setkey(maxBins)
+  index <- maxBins[coords, which = T]
+
+  new("FSFTemplate",
+      coords = as.data.frame(coords),
+      counts = as.data.frame(counts),
+      nSamples = template@nSamples,
+      channels = colnames(coords),
+      nBins = nrow(coords),
+      resolution = template@resolution,
+      dimen = template@dimen,
+      index = index)
 }
 
 #' Simplified pairwise adonis2 for only one Term
@@ -62,10 +118,10 @@ pw.adonis2 <- function(distM, term, data, adjust = "bonferroni") {
     dMsubs <- as.dist(dM[subs, subs])
     metaSubs <- meta[subs,1,drop = F]
 
-    cat("====================== \n")
-    cat(factorComb[,i], "\n")
+    #cat("====================== \n")
+    #cat(factorComb[,i], "\n")
     ad <- adonis2(dMsubs ~ ., data = metaSubs)
-    print(ad)
+    #print(ad)
 
     ad['Pr(>F)'][1,1]
   })
@@ -77,6 +133,71 @@ pw.adonis2 <- function(distM, term, data, adjust = "bonferroni") {
     cat("-----------------\n")
     cat(factorComb[,i],": ", pv[i], "\n")
   }
+
+
+}
+
+#' Check which flow cytometry channels show significant difference between given metadata groups
+#'
+#' @param template A FSFTemplate
+#' @param term The term to compute \code{\link{adonis2}} for
+#' @param data The data from which to take the term
+#' @param adjust p-value adjustment method for \code{\link{p.adjust}}
+#' @param ... Additional arguments passed to \code{\link{adonis2}}
+#'
+#' @return A ggplot2 object
+#' @import ggplot2 vegan
+#' @export
+#'
+#' @examples
+significantChannels <- function(template, term, data, adjust = "bonferroni", ...) {
+
+  #meta <- metadata[,group]
+
+  meta <- data[,term, drop = F]
+  channels <- colnames(template@coords)
+  #cList <- lapply(seq_len(length(channels)), function(x) combn(channels, x, simplify = F))
+  #cList <- unlist(cList)
+
+  pv <- sapply(channels, function(channels) {
+    temp <- shrink(template, channels)
+    distM <- as.matrix(vegdist(frequencies(temp)))
+
+    cc <- complete.cases(meta)
+    metaCC <- meta[cc, term, drop = F]
+    distM <- distM[cc, cc]
+
+    if (!identical(meta, metaCC)) {
+      warning("NAs removed in metadata")
+    }
+
+    ad <- adonis2(distM ~ ., data = metaCC, ...)$`Pr(>F)`[1]
+
+  })
+
+  pv <- p.adjust(pv, adjust)
+  sigf <- pv <= .05
+
+  df <- data.frame(channels, pv, sigf)
+  df <- df[order(df$pv),]
+
+
+  sigStar <- function(x) {
+    sapply(x, function(x) {
+      if (x <= 0.05) x <- paste(x, "*")
+      if (x <= 0.01) x <- paste(x, "*")
+      as.character(x)
+    })
+  }
+
+  ggplot(data = df, mapping = aes(y = pv, x = factor(channels, levels = channels), fill = sigf)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = sigStar(pv)), nudge_y = .05, angle = 90) +
+    geom_hline(yintercept = .05, alpha = .2) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1)) +
+    labs(fill = "significant", x = "Channel", y = "p-value",
+         title = paste("Results of singular channel PERMANOVAs for", term))
 
 
 }
