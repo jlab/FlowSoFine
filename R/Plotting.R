@@ -29,7 +29,6 @@ plot.FSFTemplate <- function(template, sample = NA, z = NULL, limits = NULL, ...
     if(is.na(sample)) {
 
       ggplot(points, aes(x = points[,1], ...)) +
-        geom_bar(stat = "identity") +
         geom_point() +
         geom_line() +
         theme_minimal() +
@@ -144,10 +143,11 @@ colormap <- function(template, sample, z = NULL, limits = NULL) {
   #get mean coordinates of z channel
   zMean <- as.data.frame(zSized[,3:ncol(zSized)]/dSized[,3:ncol(dSized)])
 
-  colours <- c("blue4", "cyan3", "darkgreen", "mediumseagreen",  "chartreuse1", "goldenrod" , "gold", "darkorange", "firebrick1", "firebrick4")
+  #colours <- c("blue4", "cyan3", "darkgreen", "mediumseagreen",  "chartreuse1", "goldenrod" , "gold", "darkorange", "firebrick1", "firebrick4")
 
   plot(temp2d, mapping = aes(fill = zMean[,sample])) +
-    scale_fill_gradientn(colours = colours, limits = limits) +
+    #scale_fill_gradientn(colours = colours, limits = limits) +
+    #scale_fill_gradient(low = "darkslateblue", high = "skyblue1", limits = limits) +
     labs(title = colnames(zMean)[sample], fill = paste0("mean(",z,")"))
 
 }
@@ -156,8 +156,7 @@ colormap <- function(template, sample, z = NULL, limits = NULL) {
 #' Plot A flowCore flowFrame
 #'
 #' @param flowFrame A \code{\link{flowCore}} flowFrame
-#' @param x x-channel
-#' @param y Y-channel
+#' @param channels A vector of channel names
 #' @param resolution Resolution of the plot
 #' @param transformation Transformation. Default is log10. transformation = NULL for no transformation
 #' @param ... Additional arguments passed to plot.FSFTemplate
@@ -168,13 +167,40 @@ colormap <- function(template, sample, z = NULL, limits = NULL) {
 #' @importFrom flowCore identifier
 #'
 #' @examples
-plotFF <- function(flowFrame, x, y, resolution = 50, transformation = log10, ...) {
+plotFF <- function(flowFrame, channels, resolution = 50, transformation = log10, ...) {
+  if(length(channels) > 3) stop("Too many channels. Only 1 - 3 channels supported.")
+
   ct <- FSFTemplate(flowSet(flowFrame),
-                     c(x, y),
+                     channels,
                      resolution = resolution,
                      transformation = transformation,
                      verbose = F)
   plot(ct, 1, ...) + labs(title = identifier(flowFrame))
+}
+
+#' Plot A flowCore flowFrame (3 channels)
+#'
+#' @param flowFrame A \code{\link{flowCore}} flowFrame
+#' @param channels A vector of length 3 containing the channel names
+#' @param z The channel that should be used as fill color
+#' @param resolution Resolution of the plot
+#' @param transformation Transformation. Default is log10. transformation = NULL for no transformation
+#' @param ... Additional arguments passed to plot.FSFTemplate
+#'
+#' @return A ggplot2 plot
+#' @export
+#' @importFrom flowCore flowSet
+#'
+#' @examples
+colormapFF <- function(flowFrame, channels, z = NULL, resolution = 50, transformation = log10, ...) {
+  ct <- FSFTemplate(flowSet(flowFrame),
+                    channels,
+                    resolution = resolution,
+                    transformation = transformation,
+                    verbose = F)
+
+  colormap(ct, 1, z = z, ...) + labs(title = identifier(flowFrame))
+
 }
 
 
@@ -200,6 +226,7 @@ plotTscores <- function(template, ts, limits = NULL) {
   } else if(length(channels) == 1) {
 
     plot(template, y = ts, fill = ts)+
+      geom_bar(stat = "identity") +
       scale_fill_gradient2(low = "blue", high = "red", limits = limits) +
       labs(title = colnames(ts), y = "t-scores")
 
