@@ -63,6 +63,9 @@ print.FSFTemplate <- function(template, samples = 1) {
 #'
 #' @examples
 shrink <- function(template, channels) {
+
+  chIndex <- which(template@channels %in% channels)
+  channels <- template@channels[chIndex] #reorder channels correctly
   cnames <- colnames(template@counts)
   subPoints <- template@coords[,channels, drop = F]
 
@@ -77,12 +80,12 @@ shrink <- function(template, channels) {
   coords <- dSized[,..channels]
 
   #for the index
-  maxBins <- expand.grid(template@dimen[which(template@channels %in% channels)])
+
+  maxBins <- expand.grid(template@dimen[chIndex])
   colnames(maxBins) <- channels
   setDT(maxBins)
   setkey(maxBins)
-  index <- maxBins[coords, which = T]
-
+  index <- maxBins[coords, which = T, nomatch = NA]
   new("FSFTemplate",
       coords = as.data.frame(coords),
       counts = as.data.frame(counts),
@@ -92,6 +95,7 @@ shrink <- function(template, channels) {
       resolution = template@resolution,
       dimen = template@dimen,
       index = index)
+
 }
 
 #' Simplified pairwise adonis2 for only one Term
@@ -157,7 +161,9 @@ significantChannels <- function(template, term, data, adjust = "bonferroni", ...
   meta <- data[,term, drop = F]
   channels <- colnames(template@coords)
   #cList <- lapply(seq_len(length(channels)), function(x) combn(channels, x, simplify = F))
-  #cList <- unlist(cList)
+  #cList <- unlist(cList, recursive = F)
+
+  #print(cList)
 
   pv <- sapply(channels, function(channels) {
     temp <- shrink(template, channels)
