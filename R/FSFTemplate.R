@@ -52,10 +52,13 @@ FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log1
   logD <- lapply(fl, function(x) as.data.frame(transformation(x@exprs[, channels])))
 
   #filter out -Inf
-  logD <- lapply(logD, function(x) {
-    x[x < 0] <- 0
-    x
-  })
+  if (isTRUE(all.equal(transformation, log10))) {
+    logD <- lapply(logD, function(x) {
+      x[x < 0] <- 0
+      x
+    })
+    warning("log10 transformation might shift events on the border")
+  }
 
   channelAll <- do.call(rbind, logD)
 
@@ -67,7 +70,7 @@ FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log1
 
   dimensions <- lapply(1:ncol(rangeV), function(x) {
     d <- seq(rangeV[1,x], rangeV[2,x], length.out = resolution)
-    d <- d + (min(dist(d))/2)
+    #d <- d + (min(dist(d))/2) #dimension correction
   })
 
   maxBins <- expand.grid(dimensions)
