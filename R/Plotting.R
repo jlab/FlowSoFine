@@ -36,10 +36,11 @@ plot.FSFTemplate <- function(template, sample = NA, z = NULL, limits = NULL, ...
 
     } else {
 
-      ggplot(mapping = aes(y = log10(counts), x = points[,1], color = log10(counts))) +
+      ggplot(mapping = aes(y = log10(counts), x = points[,1])) +
+        geom_bar(stat = "identity", aes(fill = log10(counts))) +
         geom_point() +
         geom_line() +
-        scale_color_gradientn(colours = colours, limits = limits) +
+        scale_fill_gradientn(colours = colours, limits = limits) +
         theme_minimal() +
         labs(x = channels, title = sName)
 
@@ -70,25 +71,6 @@ plot.FSFTemplate <- function(template, sample = NA, z = NULL, limits = NULL, ...
 
     colormap(template, sample, z, limits = limits)
 
-    # colnames(points) <- c("V1", "V2", "V3")
-    # counts <- log10(counts)
-    #
-    # points <- points[-which(counts<0),]
-    # counts <- counts[-which(counts < 0)]
-    #
-    # fig <- plot_ly(points, x = ~V1, y = ~V2, z = ~V3,
-    #                type = "scatter3d",
-    #                mode = "markers",
-    #                color = counts,
-    #                colors = colours,
-    #                ...)#1/length(counts)*4000)
-    # layout(fig,
-    #        scene = list(
-    #          xaxis = list(title = channels[1]),
-    #          yaxis = list(title = channels[2]),
-    #          zaxis = list(title = channels[3])
-    #        )
-    # )
   }
 }
 
@@ -228,7 +210,8 @@ plotTscores <- function(template, ts, limits = NULL) {
     plot(template, y = ts, fill = ts)+
       geom_bar(stat = "identity") +
       scale_fill_gradient2(low = "blue", high = "red", limits = limits) +
-      labs(title = colnames(ts), y = "t-scores")
+      labs(title = colnames(ts), y = "t-scores") +
+      coord_flip()
 
   }
 
