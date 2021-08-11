@@ -57,7 +57,7 @@ FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log1
       x[x < 0] <- 0
       x
     })
-    warning("log10 transformation might shift events on the border")
+    warning("log transformations might shift events on the border because of events with an expression of 0. Consider using asinh instead.")
   }
 
   channelAll <- do.call(rbind, logD)
@@ -70,7 +70,7 @@ FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log1
 
   dimensions <- lapply(1:ncol(rangeV), function(x) {
     d <- seq(rangeV[1,x], rangeV[2,x], length.out = resolution)
-    #d <- d + (min(dist(d))/2) #dimension correction
+    d <- d + (min(dist(d))/2) #dimension correction
   })
 
   maxBins <- expand.grid(dimensions)
