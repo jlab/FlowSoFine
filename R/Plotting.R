@@ -32,7 +32,8 @@ plot.FSFTemplate <- function(template, sample = NA, z = NULL, limits = NULL, ...
         geom_point() +
         geom_line() +
         theme_minimal() +
-        labs(x = channels)
+        labs(x = channels) +
+        coord_flip()
 
     } else {
 
@@ -41,6 +42,7 @@ plot.FSFTemplate <- function(template, sample = NA, z = NULL, limits = NULL, ...
         geom_point() +
         geom_line() +
         scale_fill_gradientn(colours = colours, limits = limits) +
+        coord_flip() +
         theme_minimal() +
         labs(x = channels, title = sName)
 
@@ -210,8 +212,7 @@ plotTscores <- function(template, ts, limits = NULL) {
     plot(template, y = ts, fill = ts)+
       geom_bar(stat = "identity") +
       scale_fill_gradient2(low = "blue", high = "red", limits = limits) +
-      labs(title = colnames(ts), y = "t-scores") +
-      coord_flip()
+      labs(title = colnames(ts), y = "t-scores")
 
   }
 
