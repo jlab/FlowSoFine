@@ -4,12 +4,14 @@
 \alias{tscores}
 \title{Get t-scores according to Welch's t-statistic for a FSFTemplate and a Metadata Group}
 \usage{
-tscores(template, group)
+tscores(template, group, reverse = FALSE)
 }
 \arguments{
 \item{template}{A FSFTemplate Object}
 
 \item{group}{A vector of metadata}
+
+\item{rev}{Reverse group ordering}
 }
 \value{
 A DataFrame of t-scores

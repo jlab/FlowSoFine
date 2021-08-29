@@ -2,12 +2,13 @@
 #'
 #' @param template A FSFTemplate Object
 #' @param group A vector of metadata
+#' @param rev Reverse group ordering
 #'
 #' @return A DataFrame of t-scores
 #' @export
 
 #' @examples
-tscores <- function(template, group) {
+tscores <- function(template, group, reverse = FALSE) {
 
   relative <- t(frequencies(template))
   treatment <- as.factor(group)
@@ -17,6 +18,7 @@ tscores <- function(template, group) {
   gr <- gr[!duplicated(t(apply(gr, 1, sort))), ]
   gr <- gr[gr[,1] != gr[,2],]
 
+  if(reverse) gr <- rev(gr)
 
   ts <- apply(gr, 1, function(x) {
     s1mean <- apply(relative[,which(treatment == x[1])],1,mean)
