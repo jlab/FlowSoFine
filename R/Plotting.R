@@ -61,7 +61,7 @@ plot.FSFTemplate <- function(template, sample = NA, z = NULL, limits = NULL, ...
 
       ggplot(points, aes(x = points[,1], y = points[,2], fill = log10(counts))) +
         geom_raster(...) +
-        scale_fill_gradientn(colours = colours, limits = limits) +
+        scale_fill_gradientn(colours = colours, limits = limits, na.value = "gray90") +
         labs(x = channels[1], y = channels[2], fill = "log10(Events)", title = sName) +
         theme_minimal()
 
