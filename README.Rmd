@@ -6,13 +6,18 @@ output:
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-
+<!-- knitr::knit("README.Rmd") -->
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
+  #comment = "#>",
+  out.width = "100%",
+  dev.args = list(png = list(type = "cairo"))
+)
+
+knitr::opts_knit$set(
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  root.dir = "C:/Users/jonas/Documents/IUF/FACSDATA/Exp"
 )
 ```
 
@@ -29,82 +34,274 @@ The goal of FlowSoFine is to quickly and easily generate data structures that ma
 You can install the development version of FlowSoFine from GitHub with:
 
 ``` r
-library(devtools)
-install_github("JonasKup/FlowSoFine")
+install.packages("remotes")
+remotes::install_github("JonasKup/FlowSoFine")
 ```
 
-## Quickstart
+## Graphical User Interface
 
+A graphical user interface for the method is available here: https://github.com/JonasKup/FlowSoFineApp
 
-This is a basic example which shows you how to solve a common problem:
+## Quick Start
 
-```{r example}
-library(FlowSoFine)
-setwd("C:/Users/jonas/Documents/IUF/FACSDATA/testExp/fcs")
+### Reading Files and Metadata
 
+First read the fcs-files and the metadata table.
 
-#for reading fcs files. Installation via Bioconductor. https://www.bioconductor.org/packages/release/bioc/html/flowCore.html
+```{r quickstart}
 library(flowCore)
+
+metadata <- read.csv2("metadata.csv")
 
 fcs <- read.flowSet(pattern = ".fcs")
 
+fcs
+
 ```
 
-```{r exhidden, echo = FALSE}
-sampleNames(fcs) <- paste("sample", sep = "_", 1:length(sampleNames(fcs)))
+### Creating the FSFTemplate
+
+Check the available channels:
+```{r}
+colnames(fcs)
 ```
 
-```{r exampl}
-setwd("C:/Users/jonas/Documents/IUF/FACSDATA/testExp/fcs")
-metadata <- read.csv2("metadata.csv")
+We can quickly plot samples by using the plotFF-function:
 
-#Create the FSFTemplate
-template <- FSFTemplate(flowset = fcs, channels = c("FSC PAR", "Hoechst Red"), resolution = 35)
+```{r}
+library(FlowSoFine)
 
-#plot the first sample of the FSFTemplate
-plot(template = template, sample = 1)
+plotFF(flowFrame = fcs[[1]], 
+       channels = c("SSC-H", "DAPI-H")) #plot the first sample
+```
 
+Next create the FSFTemplate. Fine tuning of the *FSFTemplate* function is explained in the "FSFTemplate"-chapter.
+```{r}
 
-#Create a distance matrix with adjustments for spatial dependencies
+template <- FSFTemplate(fcs, c("SSC-H", "DAPI-H"))
+
+```
+
+### Creating the Distance Matrix
+
+We can create a distance matrix directly from the FSFTemplate using the *weightedBray* function. It automatically adjusts for spatial dependencies in the grid by assigning weights to every combination of bins based on their distance from another. Further Details and how to create a distance matrix without adjustments are explained in the "Weights and Distance Matrices"-chapter.
+```{r}
 distM <- weightedBray(template)
+```
 
 
-#for community ecology statistics
+### nmds-plot
+To visualize the difference between the samples we can use a nmds-plot. For this we can use the *metaMDS* function that is included in the *vegan* package for community ecology.
+
+```{r, message = FALSE}
 library(vegan)
 
-#You can use the adonis2 function from the vegan package to get statistical output
-adonis2(distM ~ treatment + age, data = metadata)
+nmd <- metaMDS(distM, trace = FALSE)
 
+
+plot(nmd, display = "sites")
+ordispider(nmd, 
+           groups = metadata$treatment)
+ordiellipse(nmd, 
+            groups = metadata$treatment, 
+            draw = "polygon", 
+            col = c("darkblue", "white", "black"),
+            label = TRUE)
+
+```
+
+### Analysis of Variance using ADONIS
+
+The function *adonis2* from the *vegan* package makes it possible to perform an analysis of variance on a distance matrix to test for significant effects in treatment groups.
+
+First check for homogeneity in group variances:
+
+``` {r}
+bd <- betadisper(distM, metadata$treatment)
+boxplot(bd)
+permutest(bd, pairwise = T)
+```
+
+Then check for a effect using vegan's PERMANOVA implementation.
+
+```{r}
+adonis2(distM ~ treatment, data = metadata)
+```
+
+The FlowSoFine package contains a function for performing a basic pairwise PERMANOVA.
+
+```{r}
+pw.adonis2(distM, term = "treatment", data = metadata, adjust = "BH")
+```
+
+
+
+### Detection of driving features with t-scores
+It might be interesting to know if the significant effect stems from a certain region within the SSC-H - DAPI-H area. For this we calculate t-scores based on Welch's t-statistic independently for every bin and for every combination of levels in a given metadata group and use them as a measurement of difference. 
+
+The *tscores* function does this automatically. It returns a data.frame of t-scores with the columns representing every possible unique combination of levels in the given metadata group.
+
+For visualization purposes we create a higher resolution FSFTemplate first.
+
+
+
+```{r}
+template50 <- FSFTemplate(fcs, c("SSC-H", "DAPI-H"), resolution = 50)
+
+ts <- tscores(template50, metadata$treatment)
+
+head(ts)
+```
+
+We can visualize the differences between two levels of a metadata group using the *plotTscores* function. 
+.
+```{r}
+
+plotTscores(template50, ts[, "Treatment 1-control", drop = F])
+
+```
+In this case a red colored bin indicates an increase in event percentage in this region in the samples of the Treatment 1 samples compared to the control. The big red region might be something we want to look at more closely and possibly perform a subsequent FACS analysis where this area could be sorted and further evaluated. 
+
+## FSFTemplate
+
+There are some adjustments we can make to the FSFTemplate function. We can change the resolution of the grid by using the **resolution** argument. Default is 15.
+
+Furthermore we can give a function to transform the data to the **transformation** argument. If no function is given the data will be log10 transformed. If the data should not be transformed at all then *transformation = NULL* will do the trick.
+
+The following creates the same FSFTemplate that was created in the "Quick Start"-chapter.
+
+```{r, eval = FALSE}
+template <- FSFTemplate(flowset = fcs, 
+                        channels = c("SSC-H", "DAPI-H"),
+                        resolution = 15,
+                        transformation = log10)
 ```
 
 ## Plotting
-```{r Plotting}
-#plot a flowCore flowFrame with a flexible resolution and transformation function
-plotFF(flowFrame = fcs[[1]], channels = c("FSC PAR", "Hoechst Red"), resolution = 250, transformation = asinh)
+The *plot* method for the FSFTemplate class and the *plotTscores* function return *ggplot* objects and are therefore highly customizable.
 
+We can plot the empty grid:
+```{r}
+plot(template)
+```
 
-#plot the first sample of the above created FSFTemplate
-plot(template, sample = 1)
+Or fill it with the event percentages of sample no. 5
+```{r}
+plot(template, sample = 5)
+```
 
-#add info to the plot using the ggplot2 library
+If additional layers should be added to the plot we first have to load the *ggplot2* library.
+
+Add the bin number to each bin
+```{r}
 library(ggplot2)
-#add tbe total number of events in each bin for sample 1 to the plot
-plot(template, sample = 1) + geom_text(aes(label = template@counts[,1]), size = 2)
 
-#add the bin number to each bin
-plot(template, sample = 1) + geom_text(aes(label = 1:template@nBins), size = 2)
-
+plot(template, sample = 1) + 
+  geom_text(aes(label = 1:template@nBins), size = 3)
 
 ```
 
-## T-Scores
+Plot the number of events in every bin for sample no. 5
+```{r}
+plot(template, sample = 5) + 
+  geom_text(aes(label = template@counts[,5]), size = 2)
+```
 
-## Additional statistical output (adonis2, NMDS)
+## Weights and Distance Matrices
+
+### Distance Matrix without adjustments for spatial dependencies
+
+First turn the absolute event numbers contained in the FSFTemplate into frequencies. We can do that using the *frequencies* function. Next we can create a distance matrix using the *vegdist* function from the *vegan* package in conjunction with the frequency table. 
+
+```{r, eval = FALSE}
+freq <- frequencies(template)
+
+library(vegan)
+distM_vegan <- vegdist(freq, method = "bray")
+```
+
+
+### The weightedBray function
+
+The default way to create a distance matrix from a FSFTemplate is the *weightedBray* function which expands on the Bray-distance by adding in a weight matrix that contains a weight for every combination of bins We can give the function a custom weight matrix but the default weight matrix is calculated with exp(-1\*gamma\*euclDist) where gamma is a factor controlling the speed of the decline and euclDist is a matrix containing the euclidean distances between the bin's centers. We can control the gamma factor directly with the **gamma** argument of the *weightedBray* function. Default is 8. Lower values increase the region around any bin that is taken into account when calculating the distance matrix. Higher values make the function behave closer to the default Bray-distance.
+
+```{r, eval = FALSE}
+distM8 <- weightedBray(template, gamma = 8)
+
+distM2 <- weightedBray(template, gamma = 2) #bigger region of spatial dependecy
+
+```
+
+### Custom Weight Matrices
+
+If the default exponential approach is not what we want we can use the *weightMatrix* function and give it to the **w** argument of the *weightedBray* function. For the *weightMatrix* function we can choose between an exponential approach or a discrete approach by calling the function with either "exp" or "disc" as the **method** argument. If no custom weight matrix is given then *weightedBray* uses the exponential approach of the *weightMatrix* function by default.
+
+The following creates the same distance matrix as in the "Quick Start"-chapter:
+```{r, eval = FALSE}
+wM_exp <- weightMatrix(template, method = "exp", gamma = 8)
+distM <- weightedBray(template, w = wM_exp)
+```
+
+The discrete approach gives us more control over the final matrix by letting us give a weight for every ranked distance between bins to the **val** argument of the *weightMatrix* function. However this approach depends on the resolution of the template's grid.
+
+```{r, eval = FALSE}
+wM_disc <- weightMatrix(template, method = "disc", val = c(.5,.25,.25))
+```
+
+### Visualizing Weight Matrices
+
+We can visualize the different weight matrices by plotting the empty grid and giving a column of a weight matrix to the fill aesthetic of the *plot* function.
+
+In this case we plot the weights of every bin relating to bin no. 82 as contained in the default exponential weight matrix.
+```{r}
+wM <- weightMatrix(template, method = "exp", gamma = 8)
+
+plot(template, mapping = aes(fill = wM[,82])) + 
+  geom_text(aes(label = 1:template@nBins), size = 3)
+```
 
 ## Multidimensional analysis
 
+The approach shown here is not limited to two dimensional data. Instead it's possible to easily add channels when creating a FSFTemplate.
+
 ### Creating and converting higher dimensional FSFTemplates
+
+The following creates a template with four channels.
+
+```{r}
+template4d <- FSFTemplate(fcs, c("SSC-H", "DAPI-H", "APC-H", "FITC-H"), resolution = 15)
+```
+
+It is possible to quickly create a lower dimension FSFTemplate from a higher dimension template using the *shrink*-function.
+
+```{r}
+template2d <- shrink(template4d, c("SSC-H", "DAPI-H"))
+
+plot(template2d, sample = 1)
+
+```
+
 
 ### Plotting with less or more than two channels
 
+It's possible to project the mean coordinates of a third channel's bins onto a two dimensional grid using the colormap function. 
+
+``` {r}
+colormap(shrink(template4d, c("SSC-H", "DAPI-H", "APC-H")), sample = 1, z = "APC-H")
+
+```
+
+It is also possible to plot a single channel.
+
+``` {r}
+plot(shrink(template4d, c("SSC-H")), sample = 1)
+
+```
+
 ### Analysing single channels
+
+With the *singleChannel.adonis2*-function it is possible to automatically check which channels detect an effect in the data given a higher dimensional template. Keep in mind that a higher dimensional structure might still detect significant effects in the given metadata variable even if the individual channels do not. However, this is approach can show which channel on its own can detect effects in the data.
+
+``` {r}
+singleChannel.adonis2(template4d, term = "treatment", data = metadata, adjust = "BH")
+```
