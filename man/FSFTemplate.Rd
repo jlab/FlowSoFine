@@ -7,7 +7,7 @@
 FSFTemplate(
   flowset,
   channels,
-  resolution = 4,
+  resolution = 15,
   transformation = log10,
   verbose = T
 )
