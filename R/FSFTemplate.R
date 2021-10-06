@@ -31,7 +31,7 @@ setClass("FSFTemplate",
 #' @import flowCore data.table
 #'
 #' @examples
-FSFTemplate <- function(flowset, channels, resolution = 4, transformation = log10, verbose = T) {
+FSFTemplate <- function(flowset, channels, resolution = 15, transformation = log10, verbose = T) {
 
 
   if(is.null(transformation)) {
