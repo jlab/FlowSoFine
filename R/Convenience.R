@@ -154,7 +154,7 @@ pw.adonis2 <- function(distM, term, data, adjust = "bonferroni") {
 #' @export
 #'
 #' @examples
-significantChannels <- function(template, term, data, adjust = "bonferroni", ...) {
+singleChannel.adonis2 <- function(template, term, data, adjust = "bonferroni", ...) {
 
   #meta <- metadata[,group]
 
