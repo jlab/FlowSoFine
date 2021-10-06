@@ -282,7 +282,7 @@ plot(template2d, sample = 1)
 ```
 
 
-### Plotting with less or more than two channels
+### Plotting
 
 It's possible to project the mean coordinates of a third channel's bins onto a two dimensional grid using the colormap function. 
 

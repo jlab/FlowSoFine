@@ -23,8 +23,7 @@
     -   [Multidimensional analysis](#multidimensional-analysis)
         -   [Creating and converting higher dimensional
             FSFTemplates](#creating-and-converting-higher-dimensional-fsftemplates)
-        -   [Plotting with less or more than two
-            channels](#plotting-with-less-or-more-than-two-channels)
+        -   [Plotting](#plotting-1)
         -   [Analysing single channels](#analysing-single-channels)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -172,14 +171,14 @@ permutest(bd, pairwise = T)
 ## 
 ## Response: Distances
 ##           Df   Sum Sq   Mean Sq      F N.Perm Pr(>F)
-## Groups     2 0.002215 0.0011075 0.3654    999  0.741
+## Groups     2 0.002215 0.0011075 0.3654    999  0.738
 ## Residuals 25 0.075777 0.0030311                     
 ## 
 ## Pairwise comparisons:
 ## (Observed p-value below diagonal, permuted p-value above diagonal)
 ##             control Treatment 1 Treatment 2
-## control                 0.98600       0.463
-## Treatment 1 0.98257                   0.531
+## control                 0.98800       0.457
+## Treatment 1 0.98257                   0.508
 ## Treatment 2 0.40472     0.45512
 ```
 
@@ -209,11 +208,11 @@ pw.adonis2(distM, term = "treatment", data = metadata, adjust = "BH")
 ## ====================== 
 ## Adjusted p-values  ( BH ) 
 ## -----------------
-## control Treatment 1 :  0.006 
+## control Treatment 1 :  0.0105 
 ## -----------------
-## control Treatment 2 :  0.138 
+## control Treatment 2 :  0.141 
 ## -----------------
-## Treatment 1 Treatment 2 :  0.006
+## Treatment 1 Treatment 2 :  0.009
 ```
 
 ### Detection of driving features with t-scores
@@ -443,7 +442,7 @@ plot(template2d, sample = 1)
 
 <img src="README_files/figure-gfm/unnamed-chunk-23-1.png" width="100%" />
 
-### Plotting with less or more than two channels
+### Plotting
 
 It’s possible to project the mean coordinates of a third channel’s bins
 onto a two dimensional grid using the colormap function.
