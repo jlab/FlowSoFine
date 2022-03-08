@@ -149,21 +149,15 @@ pw.adonis2 <- function(distM, term, data, adjust = "bonferroni") {
 #' @param adjust p-value adjustment method for \code{\link{p.adjust}}
 #' @param ... Additional arguments passed to \code{\link{adonis2}}
 #'
-#' @return A ggplot2 object
-#' @import ggplot2 vegan
+#' @return printed output
+#' @import vegan
 #' @export
 #'
 #' @examples
 singleChannel.adonis2 <- function(template, term, data, adjust = "bonferroni", ...) {
 
-  #meta <- metadata[,group]
-
   meta <- data[,term, drop = F]
   channels <- colnames(template@coords)
-  #cList <- lapply(seq_len(length(channels)), function(x) combn(channels, x, simplify = F))
-  #cList <- unlist(cList, recursive = F)
-
-  #print(cList)
 
   pv <- sapply(channels, function(channels) {
     temp <- shrink(template, channels)
@@ -182,28 +176,7 @@ singleChannel.adonis2 <- function(template, term, data, adjust = "bonferroni", .
   })
 
   pv <- p.adjust(pv, adjust)
-  sigf <- pv <= .05
 
-  df <- data.frame(channels, pv, sigf)
-  df <- df[order(df$pv),]
-
-
-  sigStar <- function(x) {
-    sapply(x, function(x) {
-      if (x <= 0.05) x <- paste(x, "*")
-      if (x <= 0.01) x <- paste(x, "*")
-      as.character(x)
-    })
-  }
-
-  ggplot(data = df, mapping = aes(y = pv, x = factor(channels, levels = channels), fill = sigf)) +
-    geom_bar(stat = "identity") +
-    geom_text(aes(label = sigStar(pv)), nudge_y = .05, angle = 90) +
-    geom_hline(yintercept = .05, alpha = .2) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1)) +
-    labs(fill = "significant", x = "Channel", y = "p-value",
-         title = paste("Results of singular channel PERMANOVAs for", term))
-
+  pv
 
 }
