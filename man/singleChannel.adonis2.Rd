@@ -18,7 +18,7 @@ singleChannel.adonis2(template, term, data, adjust = "bonferroni", ...)
 \item{...}{Additional arguments passed to \code{\link{adonis2}}}
 }
 \value{
-A ggplot2 object
+printed output
 }
 \description{
 Check which flow cytometry channels show significant difference between given metadata groups

@@ -15,4 +15,6 @@ Imports:
   dplyr,
   flowCore,
   data.table,
-  vegan
+  vegan,
+  geoR,
+  parallel
